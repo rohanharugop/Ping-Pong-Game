@@ -1,0 +1,153 @@
+openapi: 3.0.1
+info:
+  title: User Management and Leaderboard API
+  description: API for creating and authenticating users and retrieving the top 10
+    users with the highest scores.
+  version: 1.0.0
+servers:
+- url: http://localhost:3000/api
+  description: Local development server
+security:
+- BearerAuth: []
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      operationId: users_post
+      requestBody:
+        description: User object that needs to be created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        "400":
+          description: Invalid input
+        "409":
+          description: User already exists
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /users/login:
+    post:
+      summary: Authenticate a user
+      operationId: users_login_post
+      requestBody:
+        description: User credentials for authentication
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+        required: true
+      responses:
+        "200":
+          description: Authentication successful
+          headers:
+            Set-Cookie:
+              description: JWT token as a cookie
+              style: simple
+              explode: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "401":
+          description: Authentication failed
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /users/top:
+    get:
+      summary: Get the top 10 users with the highest scores
+      operationId: users_top_get
+      responses:
+        "200":
+          description: A list of the top 10 users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+                x-content-type: application/json
+        "401":
+          description: Unauthorized request
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+components:
+  schemas:
+    UserCreate:
+      required:
+      - email
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          format: password
+          example: P@ssw0rd!
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+    UserLogin:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          example: johndoe
+        password:
+          type: string
+          format: password
+          example: P@ssw0rd!
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        username:
+          type: string
+          example: johndoe
+        email:
+          type: string
+          format: email
+          example: johndoe@example.com
+        score:
+          type: integer
+          example: 1000
+      example:
+        score: 1000
+        id: 507f1f77bcf86cd799439011
+        email: johndoe@example.com
+        username: johndoe
+    inline_response_200:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Authentication successful
+        token:
+          type: string
+          example: JWT token here
+      example:
+        message: Authentication successful
+        token: JWT token here
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: swagger_server.controllers.authorization_controller.check_BearerAuth
+
