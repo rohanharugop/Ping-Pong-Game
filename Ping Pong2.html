@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+        .container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background-color: #fff;
+            overflow: hidden;
+        }
+        .rod1, .rod2 {
+            position: absolute;
+            width: 100px;
+            height: 10px;
+            background-color: #000;
+        }
+        .rod1 {
+            top: 0;
+        }
+        .rod2 {
+            bottom: 0;
+        }
+        .ball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            border-radius: 50%;
+        }
+        #start-button, #new-game-button {
+            margin: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .blurry {
+            filter: blur(5px);
+        }
+        #scoreBoard {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            color: #000;
+        }
+        .score {
+            margin: 0 20px;
+        }
+        .hearts {
+            position: absolute;
+            top: 50px;
+            display: flex;
+            justify-content: space-between;
+            width: 100px;
+        }
+        .heart1 {
+            top: 50px;
+            left: 0;
+        }
+        .heart2 {
+            bottom: 50px;
+            left: 0;
+        }
+        .heart {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            margin: 0 2px;
+        }
+        #single-player-button, #two-player-button {
+            margin: 10px;
+        }
+        .hidden {   
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="body-container" class="container blurry">
+        <div id="scoreBoard">
+            <div id="score-display1" class="score">Player 1: 0</div>
+            <div id="score-display2" class="score">Player 2: 0</div>
+        </div>
+        <div class="rod1"></div>
+        <div class="rod2"></div>
+        <div class="ball"></div>
+        <div class="hearts heart1">
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+        </div>
+        <div class="hearts heart2">
+            <div class="heart"></div>
+            <div class="heart"></div>
+            <div class="heart"></div>
+        </div>
+    </div>
+    <button id="start-button">Start Game</button>
+    <button id="new-game-button">New Game</button>
+    <button id="single-player-button">Single Player Mode</button>
+    <button id="two-player-button" class="hidden">Two Player Mode</button>
+    <script>
+        var singlePlayerMode = false;
+        var aiSpeed = 5; // Speed at which AI rod moves
+        var rod1 = document.getElementsByClassName("rod1")[0];
+        var rod2 = document.getElementsByClassName("rod2")[0];
+        var ball = document.getElementsByClassName("ball")[0];
+        var container = document.getElementsByClassName("container")[0];
+        var size = 10;
+        var score1 = 0, score2 = 0;
+        var currentRod = rod2;
+        var gameStart = false;
+        var xDirec, yDirec;
+
+        var l1 = document.getElementsByClassName("heart1")[0].getElementsByClassName("heart");
+        var l2 = document.getElementsByClassName("heart2")[0].getElementsByClassName("heart");
+        var livesNo1 = 3, livesNo2 = 3;
+
+        var notIntial = true, id;
+        var startB = document.getElementById("start-button");
+        var newGameB = document.getElementById("new-game-button");
+        var scoreDisp1 = document.getElementById("score-display1");
+        var scoreDisp2 = document.getElementById("score-display2");
+
+        var singlePlayerButton = document.getElementById("single-player-button");
+        var twoPlayerButton = document.getElementById("two-player-button");
+
+        singlePlayerButton.addEventListener('click', switchToSinglePlayer);
+        twoPlayerButton.addEventListener('click', switchToTwoPlayer);
+
+        function switchToSinglePlayer() {
+        singlePlayerMode = true;
+        singlePlayerButton.classList.add("hidden");
+        twoPlayerButton.classList.remove("hidden");
+        newGame();
+        }
+
+        function switchToTwoPlayer() {
+        singlePlayerMode = false;
+        singlePlayerButton.classList.remove("hidden");
+        twoPlayerButton.classList.add("hidden");
+        newGame();
+        }
+
+        function setBallPosition() {
+    var ballTop = ball.offsetTop;
+    var ballLeft = ball.offsetLeft;
+    var ballW = ball.offsetWidth;
+    var ballH = ball.offsetHeight;
+
+    // Check for ball collision with container boundaries
+    if (ballLeft + ballW >= container.clientWidth || ballLeft <= 0) {
+        xDirec *= (-1); // Reverse X direction
+    }
+
+    if (singlePlayerMode) {
+        // AI movement: Make the top rod (rod1) follow the ball
+        if (ballTop < container.clientHeight / 2) { // Move only if ball is in AI's half
+            if (ballLeft > rod1.offsetLeft + rod1.offsetWidth / 2) {
+                rod1.style.left = Math.min(rod1.offsetLeft + aiSpeed, container.clientWidth - rod1.offsetWidth) + "px";
+            } else {
+                rod1.style.left = Math.max(rod1.offsetLeft - aiSpeed, 0) + "px";
+            }
+        }
+    }
+
+    // Check for collision with the rods
+    if (ballTop <= rod1.offsetHeight && yDirec < 0) {
+        var rl = rod1.offsetLeft - ballW;
+        var rr = rod1.offsetLeft + rod1.offsetWidth;
+
+        if (ballLeft >= rl && ballLeft <= rr) {
+            yDirec *= (-1); // Reverse Y direction
+            score1++;
+            scoreDisp1.innerText = "Player 1: " + score1;
+        } else {
+            handleMiss(1); // Player 1 missed
+            return;
+        }
+    } else if (ballTop + ballH >= container.clientHeight - rod2.offsetHeight && yDirec > 0) {
+        var rl = rod2.offsetLeft - ballW;
+        var rr = rod2.offsetLeft + rod2.offsetWidth;
+
+        if (ballLeft >= rl && ballLeft <= rr) {
+            yDirec *= (-1); // Reverse Y direction
+            score2++;
+            scoreDisp2.innerText = "Player 2: " + score2;
+        } else {
+            handleMiss(2); // Player 2 missed
+            return;
+        }
+    }
+
+    // Update ball position
+    ballTop += yDirec;
+    ballLeft += xDirec;
+    ball.style.top = ballTop + "px";
+    ball.style.left = ballLeft + "px";
+
+    notIntial = true;
+}
+
+// Function to handle when a player misses the ball
+function handleMiss(player) {
+    if (player == 1) {
+        alert("You Missed it!!");
+        l1[livesNo1 - 1].style.visibility = "hidden";
+        livesNo1--;
+
+        clearInterval(id);
+        if (livesNo1 > 0) {
+            currentRod = rod1;
+        } else {
+            declareWinner();
+            newGame();
+        }
+    } else if (player == 2) {
+        alert("You Missed it!!");
+        l2[livesNo2 - 1].style.visibility = "hidden";
+        livesNo2--;
+
+        clearInterval(id);
+        if (livesNo2 > 0) {
+            currentRod = rod2;
+        } else {
+            declareWinner();
+            newGame();
+        }
+    }
+    notIntial = false;
+    setGame();
+}
+
+// Function to declare the winner
+function declareWinner() {
+    if (score1 > score2) {
+        alert("Winner is player 1");
+    } else if (score2 > score1) {
+        alert("Winner is player 2");
+    } else {
+        alert("It's a Tie");
+    }
+}
+function moveRod(event) {
+    var r2Left = rod2.offsetLeft;
+    var r1Left = rod1.offsetLeft;
+
+    var key = event.keyCode;
+    var elementW = rod2.offsetWidth;
+    var containerW = container.clientWidth;
+
+    if (!singlePlayerMode) {
+        if (key == 68) { // 'D' pressed for moving rod1 right
+            if (r1Left + elementW + size <= containerW) {
+                rod1.style.left = r1Left + size + "px";
+            } else {
+                rod1.style.left = containerW - elementW + "px";
+            }
+            if (!gameStart) resetBall();
+        } else if (key == 65) { // 'A' pressed for moving rod1 left
+            if (r1Left - size >= 0) {
+                rod1.style.left = r1Left - size + "px";
+            } else {
+                rod1.style.left = "0px";
+            }
+            if (!gameStart) resetBall();
+        }
+    }
+
+    if (key == 39) { // Right arrow key for moving rod2 right
+        if (r2Left + elementW + size <= containerW) {
+            rod2.style.left = r2Left + size + "px";
+        } else {
+            rod2.style.left = containerW - elementW + "px";
+        }
+        if (!gameStart) resetBall();
+    } else if (key == 37) { // Left arrow key for moving rod2 left
+        if (r2Left - size >= 0) {
+            rod2.style.left = r2Left - size + "px";
+        } else {
+            rod2.style.left = "0px";
+        }
+        if (!gameStart) resetBall();
+    }
+}
+
+        newGameB.addEventListener('click', newGame);
+        startB.addEventListener('click', visibleScreen);
+        document.addEventListener('keydown', moveRod);
+        document.addEventListener('keypress', launchBall);
+        window.addEventListener('resize', setGame);
+
+        setGame(); // to set game initially
+
+        /* to start new game */
+        function newGame() {
+            clearInterval(id);
+            document.getElementById("body-container").classList.add("blurry");
+
+            startB.classList.remove("hidden");
+            currentRod = rod2;
+            for (var i = 0; i < 3; i++) {
+                l1[i].style.visibility = "visible";
+                l2[i].style.visibility = "visible";
+            }
+            livesNo1 = 3;
+            livesNo2 = 3;
+            setGame();
+            score1 = 0, score2 = 0;
+            scoreDisp1.innerText = "Player 1: 0";
+            scoreDisp2.innerText = "Player 2: 0";
+        }
+
+        /* make screen visible when start game clicked */
+        function visibleScreen() {
+            document.getElementById("body-container").classList.remove("blurry");
+            startB.classList.add("hidden");
+        }
+
+        // to control rods
+        function moveRod(event) {
+            var r2Left = rod2.offsetLeft;
+            var r1Left = rod1.offsetLeft;
+
+            var key = event.keyCode;
+            var elementW = rod2.offsetWidth;
+            var containerW = container.clientWidth;
+            var containerH = container.clientHeight;
+            console.log(event.keyCode);
+            if (key == 68) // d pressed for moving rod1 right
+            {
+                if (r1Left + elementW + size <= containerW) {
+                    rod1.style.left = r1Left + size + "px";
+                    r1Left += size;
+                } else {
+                    rod1.style.left = containerW - elementW + "px";
+                    r1Left = containerW - elementW;
+                }
+                if (gameStart == false)
+                    resetBall();
+            } else if (key == 65) // a pressed for moving rod1 left
+            {
+                if (r1Left - size >= 0) {
+                    rod1.style.left = r1Left - size + "px";
+                    r1Left -= size;
+                } else {
+                    rod1.style.left = "0px";
+                    r1Left = 0;
+                }
+                if (gameStart == false)
+                    resetBall();
+            }
+            if (key == 39) {
+                if (r2Left + elementW + size <= containerW) {
+                    rod2.style.left = r2Left + size + "px";
+                    r2Left += size;
+                } else {
+                    rod2.style.left = containerW - elementW + "px";
+                    r2Left = containerW - elementW;
+                }
+                if (gameStart == false)
+                    resetBall();
+            } else if (key == 37) {
+                if (r2Left - size >= 0) {
+                    rod2.style.left = r2Left - size + "px";
+                    r2Left -= size;
+                } else {
+                    rod2.style.left = "0px";
+                    r2Left = 0;
+                }
+                if (gameStart == false)
+                    resetBall();
+            }
+        }
+
+        // to set ball direction before launching when enter pressed and then call startGame
+        function launchBall(event) {
+            if (event.keyCode == 13) {
+                notIntial = false;
+                // resetBall(currentRod);
+                if (currentRod == rod2) {
+                    xDirec = +1;
+                    yDirec = -1;
+                } else {
+                    xDirec = +1;
+                    yDirec = +1;
+                }
+                gameStart = true;
+                // enterCount = 0;
+                startGame();
+            }
+        }
+
+        // to set game by setting rod and ball
+        function setGame() {
+            console.log("game being set");
+            gameStart = false;
+            resetRods();
+            resetBall();
+        }
+        // to reset ball over currentRod
+        function resetBall() {
+            console.log("ball being set");
+            if (currentRod == rod2) {
+                ball.style.top = container.clientHeight - currentRod.offsetHeight - ball.offsetHeight + "px";
+                ball.style.left = currentRod.offsetLeft + (currentRod.offsetWidth) / 2 - (ball.offsetWidth) / 2 + "px";
+            } else {
+                ball.style.top = currentRod.offsetHeight + "px";
+                ball.style.left = currentRod.offsetLeft + (currentRod.offsetWidth) / 2 - (ball.offsetWidth) / 2 + "px";
+            }
+        }
+        // to reset rod in middle
+        function resetRods() {
+            console.log("rods being set");
+            rod1.style.left = "45%";
+            rod2.style.left = "45%";
+        }
+        // function to start game ie launch the ball
+        function startGame() {
+            gameStart = true;
+            id = setInterval(setBallPosition, 10);
+        }
+
+        // to move ball within container
+        function setBallPosition() {
+            var ballTop = ball.offsetTop;
+            var ballLeft = ball.offsetLeft;
+            var ballW = ball.offsetWidth;
+
+            if (ballLeft + ballW == container.clientWidth) // ball touches right boundary of the container
+                xDirec *= (-1); // reversing its x coordinates
+            else if (ball.offsetLeft == 0)
+                xDirec *= (-1);
+            else if (notIntial && ballTop == rod1.offsetHeight) // ball lies at the top of the rod1 check if it strikes the rod or not
+            {
+                var rl = rod1.offsetLeft - ball.offsetWidth;
+                var rr = rod1.offsetLeft + rod1.offsetWidth;
+
+                if (ballLeft <= rr && ballLeft >= rl) {
+                    yDirec *= (-1);
+                    score1++;
+                    scoreDisp1.innerText = "Player 1: " + score1;
+                } else {
+                    alert("You Missed it!!");
+                    l1[livesNo1 - 1].style.visibility = "hidden";
+                    livesNo1--;
+
+                    clearInterval(id);
+                    if (!(livesNo1 == 0))
+                        currentRod = rod1;
+                    notIntial = false;
+                    setGame();
+                    if (livesNo1 == 0) {
+                        if (score1 > score2)
+                            alert("Winner is player 1");
+                        else if (score2 > score1)
+                            alert("Winner is player 2");
+                        else
+                            alert("It's a Tie");
+
+                        newGame();
+                    }
+                    return;
+                }
+            } else if (notIntial && ballTop + ballW == container.clientHeight - rod2.offsetHeight) {
+                var rl = rod2.offsetLeft - ball.offsetWidth;
+                var rr = rod2.offsetLeft + rod2.offsetWidth;
+
+                if (ballLeft <= rr && ballLeft >= rl) {
+                    yDirec *= (-1);
+                    score2++;
+                    scoreDisp2.innerText = "Player 2: " + score2;
+                } else {
+                    alert("You Missed it!!");
+                    l2[livesNo2 - 1].style.visibility = "hidden";
+                    livesNo2--;
+
+                    clearInterval(id);
+                    if (!(livesNo2 == 0))
+                        currentRod = rod2;
+                    notIntial = false;
+                    setGame();
+                    if (livesNo2 == 0) {
+                        if (score1 > score2)
+                            alert("Winner is player 1");
+                        else if (score2 > score1)
+                            alert("Winner is player 2 ");
+                        else
+                            alert("It's a Tie");
+                        newGame();
+                    }
+                    return;
+                }
+            }
+            ballTop += yDirec;
+            ballLeft += xDirec;
+            ball.style.top = ballTop + "px";
+            ball.style.left = ballLeft + "px";
+            notIntial = true;
+            console.log(ball.offsetTop, ball.offsetLeft);
+        }
+    </script>
+</body>
+</html>

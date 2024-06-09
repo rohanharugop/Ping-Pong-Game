@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        .paddle {
+            position: absolute;
+            width: 20px;
+            height: 100px;
+            background-color: #000;
+        }
+
+        #paddle1 {
+            left: 0;
+            top: 150px;
+        }
+
+        #paddle2 {
+            right: 0;
+            top: 150px;
+        }
+
+        #ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #f00;
+            left: 390px;
+            top: 190px;
+            border-radius: 50%;
+        }
+
+        #scoreBoard {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            color: #000;
+        }
+
+        .score {
+            margin: 0 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="scoreBoard">
+            <div id="player1Score" class="score">Player 1: 0</div>
+            <div id="player2Score" class="score">Player 2: 0</div>
+        </div>
+        <div id="paddle1" class="paddle"></div>
+        <div id="paddle2" class="paddle"></div>
+        <div id="ball"></div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const gameContainer = $('#gameContainer');
+            const paddle1 = $('#paddle1');
+            const paddle2 = $('#paddle2');
+            const ball = $('#ball');
+            const player1ScoreElement = $('#player1Score');
+            const player2ScoreElement = $('#player2Score');
+            const containerHeight = gameContainer.height();
+            const containerWidth = gameContainer.width();
+            const paddleHeight = paddle1.height();
+            const paddleWidth = paddle1.width();
+            const ballSize = ball.width();
+            
+            let ballTop = parseInt(ball.css('top'));
+            let ballLeft = parseInt(ball.css('left'));
+            let ballSpeedX = 3;
+            let ballSpeedY = 3;
+            let paddle1Top = parseInt(paddle1.css('top'));
+            let paddle2Top = parseInt(paddle2.css('top'));
+            const paddleSpeed = 20;
+
+            let player1Score = 0;
+            let player2Score = 0;
+
+            function moveBall() {
+                ballTop += ballSpeedY;
+                ballLeft += ballSpeedX;
+
+                // Ball collision with top or bottom
+                if (ballTop <= 0 || ballTop + ballSize >= containerHeight) {
+                    ballSpeedY = -ballSpeedY;
+                }
+
+                // Ball collision with paddles
+                if (ballLeft <= paddleWidth && ballTop + ballSize > paddle1Top && ballTop < paddle1Top + paddleHeight) {
+                    ballSpeedX = -ballSpeedX;
+                } else if (ballLeft + ballSize >= containerWidth - paddleWidth && ballTop + ballSize > paddle2Top && ballTop < paddle2Top + paddleHeight) {
+                    ballSpeedX = -ballSpeedX;
+                }
+
+                // Ball out of bounds (reset and update score)
+                if (ballLeft <= 0) {
+                    player2Score++;
+                    updateScores();
+                    resetBall();
+                } else if (ballLeft + ballSize >= containerWidth) {
+                    player1Score++;
+                    updateScores();
+                    resetBall();
+                }
+
+                ball.css({ top: ballTop, left: ballLeft });
+            }
+
+            function movePaddle(paddle, direction) {
+                let top = parseInt(paddle.css('top'));
+                if (direction === 'up' && top > 0) {
+                    top -= paddleSpeed;
+                } else if (direction === 'down' && top < containerHeight - paddleHeight) {
+                    top += paddleSpeed;
+                }
+                paddle.css('top', top);
+            }
+
+            function updateScores() {
+                player1ScoreElement.text(`Player 1: ${player1Score}`);
+                player2ScoreElement.text(`Player 2: ${player2Score}`);
+            }
+
+            function resetBall() {
+                ballTop = containerHeight / 2 - ballSize / 2;
+                ballLeft = containerWidth / 2 - ballSize / 2;
+                ballSpeedX = -ballSpeedX;  // Reverse the ball's direction
+            }
+
+            $(document).keydown(function(e) {
+                switch (e.key) {
+                    case 'w':
+                        movePaddle(paddle1, 'up');
+                        break;
+                    case 's':
+                        movePaddle(paddle1, 'down');
+                        break;
+                    case 'ArrowUp':
+                        movePaddle(paddle2, 'up');
+                        break;
+                    case 'ArrowDown':
+                        movePaddle(paddle2, 'down');
+                        break;
+                }
+            });
+
+            setInterval(moveBall, 20);
+        });
+    </script>
+</body>
+</html>

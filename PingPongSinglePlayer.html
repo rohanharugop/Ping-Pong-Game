@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <div id="body-container">
+        <div class="container blurry"> <!-- Apply blur here -->
+            <div class="rod rod1"></div>
+            <div class="rod rod2"></div>
+            <div class="ball"></div>
+        </div>
+        <div class="score-container blurry"> <!-- Apply blur here -->
+            <div id="score-display1">Player 1: 0</div>
+            <div id="score-display2">Player 2: 0</div>
+        </div>
+        <div class="lives-container blurry"> <!-- Apply blur here -->
+            <div class="lives heart1">
+                <div class="heart">&#10084;</div>
+                <div class="heart">&#10084;</div>
+                <div class="heart">&#10084;</div>
+            </div>
+            <div class="lives heart2">
+                <div class="heart">&#10084;</div>
+                <div class="heart">&#10084;</div>
+                <div class="heart">&#10084;</div>
+            </div>
+        </div>
+        <div class="button-container no-blur"> <!-- No blur here -->
+            <button id="start-button">Start Game</button>
+            <button id="new-game-button">New Game</button>
+            <button id="single-player-button">Single Player Mode</button>
+            <button id="two-player-button" class="hidden">Two Player Mode</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
